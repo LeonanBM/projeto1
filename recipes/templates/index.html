@@ -1,0 +1,37 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reconhecimento Facial</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/stiles.css' %}">
+</head>
+<body>
+    <h2>Reconhecimento Facial</h2>
+
+    <div id="camera-container">
+        <video id="video" width="640" height="480" autoplay style="background-color: black;"></video>
+        <button id="capture-btn">Capturar Foto</button>
+    </div>
+
+    <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+
+    <form method="post" enctype="multipart/form-data" id="image-form" style="display:none;" action="/upload/">        {% csrf_token %}
+        <input type="file" accept="image/*" capture="environment" name="image" id="image-input" style="display:none;">
+        <button type="submit">Enviar</button>
+    </form>
+    
+
+
+    {% if nome_pessoa %}
+        <p>Nome da pessoa: {{ nome_pessoa }}</p>
+    {% endif %}
+
+    {% if error %}
+        <p>Erro: {{ error }}</p>
+    {% endif %}
+
+    <script src="{% static 'js/camera.js' %}"></script>
+</body>
+</html>
