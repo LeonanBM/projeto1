@@ -43,7 +43,7 @@ class Test(View):
             if any(result):
                 person.ultima_reconhecimento = datetime.now()
                 person.save()
-                return person.nome, person.ultima_reconhecimento.strftime("%H:%M:%S"), person.ultima_reconhecimento.strftime("%d-%m-%Y")
+                return person.nome, person.ultima_reconhecimento.strftime("%H:%M:%S"), person.ultima_reconhecimento.strftime("%Y-%m-%d")
 
         # Se nenhum rosto for reconhecido para nenhuma pessoa, retorna None
         return None, None, None
@@ -126,7 +126,7 @@ class Testando(View):
                     else:
                         # Criar uma nova verificação se não houver nenhuma
                         ultima_verificacao = Verificacao.objects.create(pessoa=person, horario=datetime.now())
-                    return person.nome, ultima_verificacao.horario.strftime("Horario %H:%M:%S"), ultima_verificacao.horario.strftime(" Data %Y-%m-%d")
+                    return person.nome, ultima_verificacao.horario.strftime("Horario %H:%M:%S"), ultima_verificacao.horario.strftime(" Data %d-%m-%Y")
                     
         # Remover a imagem temporária após o uso
         os.remove(temp_image_path)
