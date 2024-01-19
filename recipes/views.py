@@ -12,15 +12,6 @@ from .form import ImageUploadForm
 import cv2
 import os
 
-
-
-
-
-
-
-
-
-
 class Test(View):
     template_name = 'index.html'
 
@@ -52,7 +43,7 @@ class Test(View):
             if any(result):
                 person.ultima_reconhecimento = datetime.now()
                 person.save()
-                return person.nome, person.ultima_reconhecimento.strftime("%H:%M:%S"), person.ultima_reconhecimento.strftime("%Y-%m-%d")
+                return person.nome, person.ultima_reconhecimento.strftime("%H:%M:%S"), person.ultima_reconhecimento.strftime("%d-%m-%Y")
 
         # Se nenhum rosto for reconhecido para nenhuma pessoa, retorna None
         return None, None, None
@@ -124,23 +115,18 @@ class Testando(View):
                 # Comparar o encoding do rosto encontrado com o encoding da pessoa
                 result = face_recognition.compare_faces(pessoa_encodings, encoding)
 
-                if any(result):
+            if any(result):
 
                     # Obter todas as verificações associadas à pessoa
                     verificacoes = Verificacao.objects.filter(pessoa=person).order_by('-horario')
 
                     if verificacoes.exists():
-                        # Obter a última verificação
+                        person.registrar_verificacao()
                         ultima_verificacao = verificacoes.first()
-                        ultima_verificacao.horario = datetime.now()
-                        ultima_verificacao.save()
                     else:
                         # Criar uma nova verificação se não houver nenhuma
                         ultima_verificacao = Verificacao.objects.create(pessoa=person, horario=datetime.now())
-
                     return person.nome, ultima_verificacao.horario.strftime("Horario %H:%M:%S"), ultima_verificacao.horario.strftime(" Data %Y-%m-%d")
-
-
                     
         # Remover a imagem temporária após o uso
         os.remove(temp_image_path)
