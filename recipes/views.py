@@ -41,12 +41,17 @@ class Test(View):
 
             # Se houver uma correspondência, atualiza a hora e a data do último reconhecimento e retorna os detalhes
             if any(result):
-                person.ultima_reconhecimento = datetime.now()
-                person.save()
-                return person.nome, person.ultima_reconhecimento.strftime("%H:%M:%S"), person.ultima_reconhecimento.strftime("%Y-%m-%d")
 
-        # Se nenhum rosto for reconhecido para nenhuma pessoa, retorna None
-        return None, None, None
+                    # Obter todas as verificações associadas à pessoa
+                verificacoes = Verificacao.objects.filter(pessoa=person).order_by('-horario')
+
+                if verificacoes.exists():
+                    person.registrar_verificacao()
+                    ultima_verificacao = verificacoes.first()
+                else:
+                    # Criar uma nova verificação se não houver nenhuma
+                    ultima_verificacao = Verificacao.objects.create(pessoa=person, horario=datetime.now())
+                return person.nome, ultima_verificacao.horario.strftime("Horario %H:%M:%S"), ultima_verificacao.horario.strftime(" Data %Y-%m-%d")
 
     def get(self, request):
         form = ImageUploadForm()
@@ -115,18 +120,23 @@ class Testando(View):
                 # Comparar o encoding do rosto encontrado com o encoding da pessoa
                 result = face_recognition.compare_faces(pessoa_encodings, encoding)
 
-            if any(result):
+                if any(result):
 
                     # Obter todas as verificações associadas à pessoa
                     verificacoes = Verificacao.objects.filter(pessoa=person).order_by('-horario')
 
                     if verificacoes.exists():
-                        person.registrar_verificacao()
+                        # Obter a última verificação
                         ultima_verificacao = verificacoes.first()
+                        ultima_verificacao.horario = datetime.now()
+                        ultima_verificacao.save()
                     else:
                         # Criar uma nova verificação se não houver nenhuma
                         ultima_verificacao = Verificacao.objects.create(pessoa=person, horario=datetime.now())
+
                     return person.nome, ultima_verificacao.horario.strftime("Horario %H:%M:%S"), ultima_verificacao.horario.strftime(" Data %d-%m-%Y")
+
+
                     
         # Remover a imagem temporária após o uso
         os.remove(temp_image_path)
