@@ -4,7 +4,8 @@ from django.conf.urls.static import static
 from django.urls import path, include
 
 urlpatterns = [
-    path('upload/', Testando.as_view(), name='upload'),
+     path('', Test.as_view()),
+
 
 ]
 if settings.DEBUG:
