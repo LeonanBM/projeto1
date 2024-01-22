@@ -39,10 +39,16 @@ class Test(View):
             melhores_resultados.sort(key=lambda x: x[1])
 
             # Retornar o nome da pessoa mais similar
-            return melhores_resultados[0][0], None
+            return melhores_resultados[0][0], Test.get_current_datetime()
 
         except Exception as e:
             return None, f"Erro no reconhecimento facial: {str(e)}"
+
+    @staticmethod
+    def get_current_datetime():
+        from datetime import datetime
+        # Adicionando uma quebra de linha (\n) entre a data e a hora
+        return datetime.now().strftime("%d-%m-%Y\n%H:%M:%S")
 
     def get(self, request):
         return render(request, self.template_name)
@@ -54,14 +60,21 @@ class Test(View):
                 return render(request, self.template_name, {'error': 'Nenhuma imagem enviada.'})
 
             uploaded_image = request.FILES['image'].read()
-            
-            # Reconhecer o rosto na imagem
-            nome_pessoa, erro = self.recognize_face(uploaded_image)
+
+            # Chame recognize_face para obter o nome da pessoa e a data/hora do reconhecimento
+            nome_pessoa, data_hora_reconhecimento = self.recognize_face(uploaded_image)
 
             if nome_pessoa:
-                return render(request, self.template_name, {'nome_pessoa': nome_pessoa})
+                # Separar a data e a hora aqui
+                data_reconhecimento, hora_reconhecimento = data_hora_reconhecimento.split("\n")
+
+                return render(request, self.template_name, {
+                    'nome_pessoa': nome_pessoa,
+                    'data_reconhecimento': data_reconhecimento,
+                    'hora_reconhecimento': hora_reconhecimento
+                })
             else:
-                return render(request, self.template_name, {'error': erro})
+                return render(request, self.template_name, {'error': 'Pessoa não reconhecida.'})
 
         except Exception as e:
             return render(request, self.template_name, {'error': f"Erro no reconhecimento facial: {str(e)}"})
