@@ -20,5 +20,4 @@ WebOb==1.8.7
 whitenoise==6.6.0
 
 # Dependências específicas do Pip
-asgiref==3.7.2=pypi_0
-...
+asgiref==3.7.2
