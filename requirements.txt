@@ -1,32 +1,42 @@
+# Dependências do Pip
 asgiref==3.7.2
-click==8.1.7
 dj-database-url==2.1.0
 Django==4.2.9
-dlib==19.24.2
+django-heroku==0.3.1
+django-wsgi==1.0b1
 exceptiongroup==1.2.0
-face-recognition==1.3.0
-face-recognition-models==0.3.0
 flup==1.0.3
 gunicorn==21.2.0
 iniconfig==2.0.0
-mkl-fft==1.3.8
-mkl-random==1.2.4
-mkl-service==2.4.0
-numexpr==2.8.7
-numpy==1.26.3
 packaging==23.2
-pandas==2.1.4
-pillow==10.2.0
 pluggy==1.3.0
 psycopg2==2.9.9
 pytest==7.4.4
-python-dateutil==2.8.2
-pytz==2023.3.post1
-six==1.10.0
 sqlparse==0.4.4
 tomli==2.0.1
 typing-extensions==4.9.0
 tzdata==2023.4
 WebOb==1.8.7
 whitenoise==6.6.0
-gunicorn==21.2.0
+
+# Dependências do Conda
+blas=1.0=mkl
+bottleneck=1.3.5=py39h080aedc_0
+bzip2=1.0.8=he774522_0
+ca-certificates=2023.12.12=haa95532_0
+click=8.1.7=win_pyh7428d3b_0
+colorama=0.4.6=pyhd8ed1ab_0
+cmake=3.26.4=h693b641_0
+dlib=19.24.2=py39hb355393_2
+face_recognition=1.3.0=pyhd3deb0d_2
+face_recognition_models=0.3.0=pyh9f0ad1d_0
+freetype=2.12.1=hdaf720e_2
+gunicorn=21.2.0=pypi_0
+intel-openmp=2023.1.0=h59b6b97_46320
+...
+# (listagem completa das dependências do Conda)
+
+# Dependências específicas do Pip
+asgiref==3.7.2=pypi_0
+...
+# (listagem completa das dependências específicas do Pip)
