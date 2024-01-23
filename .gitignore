@@ -123,5 +123,4 @@ env
 local_settings.py
 _local_settings.py
 gunicorn-error-log
-static/
 node_modules/
