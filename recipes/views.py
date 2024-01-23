@@ -1,11 +1,60 @@
 # views.py
 from concurrent.futures import ThreadPoolExecutor
-from django.shortcuts import render
-from .models import Pessoa
+from django.http import HttpResponseForbidden
+from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import render, redirect
+from .models import Pessoa, CadastroEmAnalise
 import face_recognition
 from django.views.generic import View
 import numpy as np
 import io
+import logging
+
+logger = logging.getLogger(__name__)
+
+class MovimentarParaPessoaView(View):
+    def post(self, request, cadastro_id):
+        try:
+            # Obter o cadastro em análise pelo ID
+            cadastro_analise = get_object_or_404(CadastroEmAnalise, pk=cadastro_id)
+
+            # Adicionar lógica para mover para a tabela de pessoas
+            pessoa = Pessoa.objects.create(
+                nome=cadastro_analise.nome,
+                imagem=cadastro_analise.imagem,
+                encodings=cadastro_analise.encodings
+            )
+
+            # Marcar a análise como concluída
+            cadastro_analise.analise_concluida = True
+            cadastro_analise.save()
+
+            logger.info(f"Cadastro movido para pessoas: {pessoa.nome}")
+
+            # Redirecionar para a página correta após a movimentação
+            return redirect('admin:recipes_cadastroemanalise_changelist')
+
+        except Exception as e:
+            logger.error(f"Erro na movimentação para pessoas: {str(e)}")
+            # Adicione um retorno ou redirecionamento adequado em caso de erro
+            return redirect('admin:recipes_cadastroemanalise_changelist')
+
+    def get(self, request, cadastro_id):
+        try:
+            # Obter o cadastro em análise pelo ID
+            cadastro_analise = get_object_or_404(CadastroEmAnalise, pk=cadastro_id)
+
+            # Renderizar a página de confirmação para solicitações GET
+            return render(
+                request,
+                'movimentar_para_pessoa_confirmacao.html',
+                {'cadastro_analise': cadastro_analise}
+            )
+
+        except Exception as e:
+            logger.error(f"Erro ao exibir página de confirmação: {str(e)}")
+            # Adicione um retorno ou redirecionamento adequado em caso de erro
+            return HttpResponseForbidden("Erro ao processar a solicitação.")
 
 class CadastrarView(View):
     template_name = 'cadastrar.html'
@@ -26,7 +75,10 @@ class CadastrarView(View):
             if not face_locations:
                 # Rosto não detectado
                 mensagem = 'Rosto não detectado, tente novamente.'
-            else:
+            else:                
+                # Também salvar dados na tabela CadastroEmAnalise
+                CadastroEmAnalise.objects.create(nome=nome, imagem=foto)
+
                 # Rosto detectado, aqui você pode adicionar a lógica para salvar os dados no banco de dados, se necessário
                 mensagem = 'Dados enviados com sucesso.'
 

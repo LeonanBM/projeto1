@@ -6,6 +6,7 @@ from django.urls import path, include
 urlpatterns = [
     path('', Test.as_view(), name='index'),
     path('cadastrar/', CadastrarView.as_view(), name='cadastrar'),
+    path('mover-para-pessoas/<int:cadastro_id>/', MovimentarParaPessoaView.as_view(), name='mover-para-pessoas'),
     path('reconhecimentofacial/', ReconhecimentoFacialView.as_view(), name='reconhecimentofacial'),
 ]
 
