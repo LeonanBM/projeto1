@@ -1,10 +1,9 @@
 <!-- recipes/templates/index.html -->
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Página Principal</title>
-</head>
-<body>
+{% extends 'base.html' %}
+
+{% block title %}Página Principal{% endblock %}
+
+{% block content %}
     <h2>Escolha uma opção:</h2>
 
     <form method="post" action="{% url 'cadastrar' %}">
@@ -15,6 +14,4 @@
     <form method="get" action="{% url 'reconhecimentofacial' %}">
         <button type="submit">Reconhecimento Facial</button>
     </form>
-
-</body>
-</html>
+{% endblock %}

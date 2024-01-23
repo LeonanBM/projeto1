@@ -1,10 +1,9 @@
 <!-- recipes/templates/cadastrar.html -->
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Cadastrar</title>
-</head>
-<body>
+{% extends 'base.html' %}
+
+{% block title %}Cadastrar{% endblock %}
+
+{% block content %}
     <h2>Cadastrar</h2>
 
     <form method="post" enctype="multipart/form-data" action="{% url 'cadastrar' %}">
@@ -27,6 +26,5 @@
     <a href="{% url 'index' %}">
         <button type="button">Voltar ao Menu</button>
     </a>
+{% endblock %}
 
-</body>
-</html>

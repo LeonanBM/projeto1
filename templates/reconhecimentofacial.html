@@ -1,10 +1,9 @@
 <!-- recipes/templates/reconhecimentofacial.html -->
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Reconhecimento Facial</title>
-</head>
-<body>
+{% extends 'base.html' %}
+
+{% block title %}Reconhecimento Facial{% endblock %}
+
+{% block content %}
     <h2>Reconhecimento Facial</h2>
 
     <form method="post" enctype="multipart/form-data" action="{% url 'reconhecimentofacial' %}">
@@ -31,6 +30,4 @@
     <a href="{% url 'index' %}">
         <button type="button">Voltar ao Menu</button>
     </a>
-
-</body>
-</html>
+{% endblock %}
