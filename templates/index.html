@@ -1,27 +1,20 @@
+<!-- recipes/templates/index.html -->
 <!DOCTYPE html>
 <html>
 <head>
     <title>Página Principal</title>
 </head>
 <body>
-    <h2>Envio de Imagem</h2>
+    <h2>Escolha uma opção:</h2>
 
-    <form method="post" enctype="multipart/form-data">
+    <form method="post" action="{% url 'cadastrar' %}">
         {% csrf_token %}
-        <label for="image">Selecione uma imagem:</label>
-        <input type="file" name="image" accept="image/*" required>
-        <br>
-        <button type="submit">Enviar</button>
+        <button type="submit">Cadastrar</button>
     </form>
 
-    {% if nome_pessoa %}
-        <p>Nome da pessoa: {{ nome_pessoa }}</p>
-        <p>Data: {{ data_reconhecimento }}</p>
-        <p>Hora: {{ hora_reconhecimento }}</p>
-    {% endif %}
+    <form method="get" action="{% url 'reconhecimentofacial' %}">
+        <button type="submit">Reconhecimento Facial</button>
+    </form>
 
-    {% if error %}
-        <p>Erro: {{ error }}</p>
-    {% endif %}
 </body>
 </html>
