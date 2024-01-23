@@ -87,18 +87,21 @@ class ReconhecimentoFacialView(View):
             pessoas = Pessoa.objects.all()
             resultados_encontrados = []
 
-            def comparar_encodings(pessoa):
+            for pessoa in pessoas:
+                # Carregar encodings da pessoa do banco de dados
                 pessoa_encodings = face_recognition.face_encodings(face_recognition.load_image_file(pessoa.imagem.path))
+
+                # Comparar os encodings
                 resultados = face_recognition.compare_faces(pessoa_encodings, imagem_enviada_encodings[0], tolerance=0.6)
+                
+                # Calcular a média da distância dos resultados (quanto menor, mais similar)
                 distancia_media = np.mean(face_recognition.face_distance(pessoa_encodings, imagem_enviada_encodings[0]))
 
                 if any(resultados) and distancia_media < 0.6:
+                    # Se houver correspondência com confiança suficientemente alta (98%)
                     resultados_encontrados.append((pessoa.nome, distancia_media))
 
-            # Use ThreadPoolExecutor para paralelizar o processamento
-            with ThreadPoolExecutor() as executor:
-                executor.map(comparar_encodings, pessoas)
-
+            # Ordenar os resultados com base na distância (quanto menor, mais similar)
             resultados_encontrados.sort(key=lambda x: x[1])
 
             if resultados_encontrados:
@@ -110,6 +113,7 @@ class ReconhecimentoFacialView(View):
 
         except Exception as e:
             return None, f"Erro no reconhecimento facial: {str(e)}"
+
     @staticmethod
     def get_current_datetime():
         from datetime import datetime
