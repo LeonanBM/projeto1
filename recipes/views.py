@@ -67,24 +67,28 @@ class CadastrarView(View):
         nome = request.POST.get('nome')
         foto = request.FILES.get('foto')
 
-        try:
-            # Verificar se há um rosto na foto
-            foto_array = face_recognition.load_image_file(io.BytesIO(foto.read()))
-            face_locations = face_recognition.face_locations(foto_array)
+        # Verificar se uma imagem foi realmente enviada
+        if foto is None:
+            mensagem = 'Nenhuma imagem enviada. Por favor, escolha uma imagem.'
+        else:
+            try:
+                # Verificar se há um rosto na foto
+                foto_array = face_recognition.load_image_file(io.BytesIO(foto.read()))
+                face_locations = face_recognition.face_locations(foto_array)
 
-            if not face_locations:
-                # Rosto não detectado
-                mensagem = 'Rosto não detectado, tente novamente.'
-            else:                
-                # Também salvar dados na tabela CadastroEmAnalise
-                CadastroEmAnalise.objects.create(nome=nome, imagem=foto)
+                if not face_locations:
+                    # Rosto não detectado
+                    mensagem = 'Rosto não detectado, tente novamente.'
+                else:
+                    # Também salvar dados na tabela CadastroEmAnalise
+                    CadastroEmAnalise.objects.create(nome=nome, imagem=foto)
 
-                # Rosto detectado, aqui você pode adicionar a lógica para salvar os dados no banco de dados, se necessário
-                mensagem = 'Dados enviados com sucesso.'
+                    # Rosto detectado, aqui você pode adicionar a lógica para salvar os dados no banco de dados, se necessário
+                    mensagem = 'Dados enviados com sucesso.'
 
-        except Exception as e:
-            # Tratar erros, se houver algum problema com a detecção facial
-            mensagem = f"Erro na detecção facial: {str(e)}"
+            except Exception as e:
+                # Tratar erros, se houver algum problema com a detecção facial
+                mensagem = None  # Configurando mensagem como None para não exibi-la no template
 
         # Atualizar o contexto
         context = {'nome': nome, 'mensagem': mensagem}
