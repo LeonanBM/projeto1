@@ -3,12 +3,15 @@ from concurrent.futures import ThreadPoolExecutor
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect
 from django.shortcuts import render, redirect
-from .models import Pessoa, CadastroEmAnalise
+from .models import Pessoa, CadastroEmAnalise, Verificacao
 import face_recognition
 from django.views.generic import View
+from datetime import datetime
 import numpy as np
 import io
 import logging
+import cv2
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +58,15 @@ class MovimentarParaPessoaView(View):
             logger.error(f"Erro ao exibir página de confirmação: {str(e)}")
             # Adicione um retorno ou redirecionamento adequado em caso de erro
             return HttpResponseForbidden("Erro ao processar a solicitação.")
+
+
+# Função para processar o envio de imagens (mantida para compatibilidade)
+def upload_image(request):
+    if request.method == 'POST' and request.FILES.get('image'):
+        return JsonResponse({'status': 'success'})
+    else:
+        return JsonResponse({'status': 'error', 'message': 'Método ou arquivo inválido'})
+
 
 class CadastrarView(View):
     template_name = 'cadastrar.html'
@@ -110,87 +122,146 @@ class CadastrarView(View):
 class ReconhecimentoFacialView(View):
     template_name = 'reconhecimentofacial.html'
 
+    @staticmethod
+    def recognize_face(uploaded_image):
+        people = Pessoa.objects.all()
+        verificacao = Verificacao.objects.all()
+        # Salvar temporariamente a imagem usando OpenCV
+        temp_image_path = "temp_image.jpg"
+        with open(temp_image_path, 'wb') as temp_image_file:
+            temp_image_file.write(uploaded_image)
+        # Carregar a imagem temporária usando OpenCV
+        imagem_enviada = cv2.imread(temp_image_path)
+        # Converta a imagem para RGB (face_recognition usa RGB)
+        imagem_enviada_rgb = cv2.cvtColor(imagem_enviada, cv2.COLOR_BGR2RGB)
+        # Detectar rosto na imagem
+        face_locations = face_recognition.face_locations(imagem_enviada_rgb)
+        
+        if not face_locations:
+            return None
+
+        # Codificar os rostos encontrados
+        imagem_enviada_encodings = face_recognition.face_encodings(imagem_enviada_rgb, face_locations)
+
+
+        for person in people:
+            # Carregar encodings da pessoa do banco de dados
+            pessoa_encodings = face_recognition.face_encodings(face_recognition.load_image_file(person.imagem.path))
+
+            # Comparar os encodings
+            for i, encoding in enumerate(imagem_enviada_encodings):
+                result = face_recognition.compare_faces(pessoa_encodings, encoding)
+                
+
+
+            for i, encoding in enumerate(imagem_enviada_encodings):
+                # Comparar o encoding do rosto encontrado com o encoding da pessoa
+                result = face_recognition.compare_faces(pessoa_encodings, encoding)
+
+                if any(result):
+
+                    # Obter todas as verificações associadas à pessoa
+                    verificacoes = Verificacao.objects.filter(pessoa=person).order_by('-horario')
+
+                    if verificacoes.exists():
+                        # Obter a última verificação
+                        ultima_verificacao = verificacoes.first()
+                        ultima_verificacao.horario = datetime.now()
+                        ultima_verificacao.save()
+                    else:
+                        # Criar uma nova verificação se não houver nenhuma
+                        ultima_verificacao = Verificacao.objects.create(pessoa=person, horario=datetime.now())
+
+                    return person.nome, ultima_verificacao.horario.strftime("Horario %H:%M:%S"), ultima_verificacao.horario.strftime(" Data %d-%m-%Y")
+
+
+                    
+        # Remover a imagem temporária após o uso
+        os.remove(temp_image_path)
+        return None
+    
+
     def get(self, request):
         return render(request, self.template_name)
 
-    def post(self, request):
+    def post(self, request):        
         try:
-            # Certifique-se de que 'image' está presente nos arquivos da solicitação
-            if 'image' not in request.FILES:
-                return render(request, self.template_name, {'error': 'Nenhuma imagem enviada.'})
-
             uploaded_image = request.FILES['image'].read()
+            
+            nome_pessoa = self.recognize_face(uploaded_image)
+            if nome_pessoa:
+                return render(request, self.template_name, {'nome_pessoa': nome_pessoa, 'error': None})
 
-            # Chame recognize_face para obter o nome da pessoa e a data/hora do reconhecimento
-            nome_pessoa, data_hora_reconhecimento = self.recognize_face(uploaded_image)
-
-            if nome_pessoa is not None:
-                # Separar a data e a hora aqui
-                data_reconhecimento, hora_reconhecimento = data_hora_reconhecimento.split("\n")
-
-                return render(request, self.template_name, {
-                    'nome_pessoa': nome_pessoa,
-                    'data_reconhecimento': data_reconhecimento,
-                    'hora_reconhecimento': hora_reconhecimento
-                })
             else:
-                # Se não for possível reconhecer o rosto
-                return render(request, self.template_name, {'error': 'Erro no reconhecimento facial. Tente novamente ou realize o cadastro.'})
+                return render(request, self.template_name, {'nao reco': nome_pessoa, 'error': 'Pessoa não reconhecida.'})
 
         except Exception as e:
-            # Se ocorrer um erro geral durante o processamento
-            return render(request, self.template_name, {'error': f"Erro: {str(e)}"})
-
-    @staticmethod
-    def recognize_face(uploaded_image):
-        try:
-            # Carregar a imagem enviada
-            imagem_enviada_array = face_recognition.load_image_file(io.BytesIO(uploaded_image))
-            imagem_enviada_encodings = face_recognition.face_encodings(imagem_enviada_array)
-
-            if not imagem_enviada_encodings:
-                return None, 'Rosto não detectado, tire uma nova foto.'
-
-            # Obter encodings de todas as pessoas do banco de dados
-            pessoas = Pessoa.objects.all()
-            resultados_encontrados = []
-
-            for pessoa in pessoas:
-                # Carregar encodings da pessoa do banco de dados
-                pessoa_encodings = face_recognition.face_encodings(face_recognition.load_image_file(pessoa.imagem.path))
-
-                # Comparar os encodings
-                resultados = face_recognition.compare_faces(pessoa_encodings, imagem_enviada_encodings[0], tolerance=0.6)
-                
-                # Calcular a média da distância dos resultados (quanto menor, mais similar)
-                distancia_media = np.mean(face_recognition.face_distance(pessoa_encodings, imagem_enviada_encodings[0]))
-
-                if any(resultados) and distancia_media < 0.6:
-                    # Se houver correspondência com confiança suficientemente alta (98%)
-                    resultados_encontrados.append((pessoa.nome, distancia_media))
-
-            # Ordenar os resultados com base na distância (quanto menor, mais similar)
-            resultados_encontrados.sort(key=lambda x: x[1])
-
-            if resultados_encontrados:
-                # Retornar o nome da pessoa mais similar
-                return resultados_encontrados[0][0], ReconhecimentoFacialView.get_current_datetime()
-            else:
-                # Rosto detectado, mas não reconhecido
-                return None, 'Rosto detectado, mas não reconhecido. Realize o cadastro.'
-
-        except Exception as e:
-            return None, f"Erro no reconhecimento facial: {str(e)}"
-
-    @staticmethod
-    def get_current_datetime():
-        from datetime import datetime
-        # Adicionando uma quebra de linha (\n) entre a data e a hora
-        return datetime.now().strftime("%d-%m-%Y\n%H:%M:%S")
-
+            return render(request, self.template_name, {'error': f"Erro no reconhecimento facial: {str(e)}", 'nome_pessoa': None})
 
 class Test(View):
     template_name = 'index.html'
 
     def get(self, request):
         return render(request, self.template_name)
+
+class Teste(View):
+    template_name = 'index.html'
+
+    @staticmethod
+    def recognize_face(uploaded_image):
+        people = Pessoa.objects.all()
+
+        # Carrega a imagem enviada e obtém as codificações faciais
+        imagem_enviada_array = face_recognition.load_image_file(io.BytesIO(uploaded_image))
+        imagem_enviada_encodings = face_recognition.face_encodings(imagem_enviada_array)
+
+        # Se não houver rosto na imagem enviada, retorna None
+        if not imagem_enviada_encodings:
+            return None, None, None
+
+        # Itera sobre todas as pessoas cadastradas
+        for person in people:
+            try:
+                # Carrega a imagem da pessoa e obtém as codificações faciais
+                pessoa_encodings = face_recognition.face_encodings(face_recognition.load_image_file(person.imagem.path))
+            except FileNotFoundError:
+                # Se o arquivo de imagem da pessoa não for encontrado, continua para a próxima pessoa
+                continue
+
+            # Compara as codificações faciais
+            result = face_recognition.compare_faces(pessoa_encodings, imagem_enviada_encodings[0])
+
+            # Se houver uma correspondência, atualiza a hora e a data do último reconhecimento e retorna os detalhes
+            if any(result):
+
+                    # Obter todas as verificações associadas à pessoa
+                verificacoes = Verificacao.objects.filter(pessoa=person).order_by('-horario')
+
+                if verificacoes.exists():
+                    person.registrar_verificacao()
+                    ultima_verificacao = verificacoes.first()
+                else:
+                    # Criar uma nova verificação se não houver nenhuma
+                    ultima_verificacao = Verificacao.objects.create(pessoa=person, horario=datetime.now())
+                return person.nome, ultima_verificacao.horario.strftime("Horario %H:%M:%S"), ultima_verificacao.horario.strftime(" Data %Y-%m-%d")
+
+    def get(self, request):
+        form = ImageUploadForm()
+        return render(request, self.template_name, {'form': form})
+
+    def post(self, request):
+        form = ImageUploadForm(request.POST)
+
+        if form.is_valid():
+            # Obtém os dados da imagem enviada e realiza o reconhecimento facial
+            image_data = request.FILES['image'].read()
+            nome_pessoa, hora_reconhecimento, data_reconhecimento = self.recognize_face(image_data)
+
+            # Se houver um reconhecimento, exibe os detalhes na página
+            if nome_pessoa is not None:
+                return render(request, self.template_name, {'form': form, 'nome_pessoa': nome_pessoa, 'hora_reconhecimento': hora_reconhecimento, 'data_reconhecimento': data_reconhecimento})
+            else:
+                return render(request, self.template_name, {'form': form, 'error': 'Pessoa não reconhecida.'})
+
+        # Se ocorrer um erro no envio da imagem, exibe uma mensagem de erro
+        return render(request, self.template_name, {'form': form, 'error': 'Erro no envio da imagem.'})

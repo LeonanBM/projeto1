@@ -1,6 +1,10 @@
 # recipes/models.py
 from django.db import models
 
+class Verificacao(models.Model):
+    pessoa = models.ForeignKey('Pessoa', on_delete=models.CASCADE)
+    horario = models.DateTimeField(auto_now_add=True)
+
 class Pessoa(models.Model):
     nome = models.CharField(max_length=100)
     imagem = models.ImageField(upload_to='imagens/')

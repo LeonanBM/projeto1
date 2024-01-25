@@ -1,33 +1,43 @@
-<!-- recipes/templates/reconhecimentofacial.html -->
-{% extends 'base.html' %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reconhecimento Facial</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/stiles.css' %}">
+</head>
+<body>
 
-{% block title %}Reconhecimento Facial{% endblock %}
-
-{% block content %}
     <h2>Reconhecimento Facial</h2>
 
-    <form method="post" enctype="multipart/form-data" action="{% url 'reconhecimentofacial' %}">
-        {% csrf_token %}
-        <label for="image">Selecione uma imagem:</label>
-        <input type="file" name="image" accept="image/*" required>
-        <br>
+    <div id="camera-container">
+        <video id="video" width="640" height="480" autoplay style="background-color: black;"></video>
+        <button id="capture-btn">Capturar Foto</button>
+    </div>
+
+    <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+
+    <form method="post" enctype="multipart/form-data" id="image-form" style="display:none;" action="/upload/">        {% csrf_token %}
+        <input type="file" accept="image/*" capture="environment" name="image" id="image-input" style="display:none;">
         <button type="submit">Enviar</button>
     </form>
+    
+
 
     {% if nome_pessoa %}
         <p>Nome da pessoa: {{ nome_pessoa }}</p>
-        <p>Data: {{ data_reconhecimento }}</p>
-        <p>Hora: {{ hora_reconhecimento }}</p>
     {% endif %}
 
     {% if error %}
         <p>Erro: {{ error }}</p>
     {% endif %}
 
-    <br>
+    <script src="{% static 'js/camera.js' %}"></script>
 
     <!-- Adicionando um botão para voltar ao menu -->
-    <a href="{% url 'index' %}">
+    <a href="{% url 'index' %}" id="back-to-menu">
         <button type="button">Voltar ao Menu</button>
     </a>
-{% endblock %}
+</body>
+</html>

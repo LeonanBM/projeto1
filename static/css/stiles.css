@@ -1,0 +1,91 @@
+/* styles.css */
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Arial', sans-serif;
+    background-color: rgb(75, 75, 221);
+    color: white; /* Cor do texto */
+    width: 100%;
+    height: 100%;
+}
+
+h2 {
+    text-align: center;
+    padding: 20px;
+    font-size: xx-large;
+    font-weight: 900;
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+
+}
+
+#camera-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 20px;
+}
+
+video {
+    background-color: black;
+    width: 100%;
+    max-width: 640px;
+    height: auto;
+    margin-bottom: 10px;
+    border-radius: 25px;
+}
+
+#capture-btn {
+    background-color: #00cc00; /* Cor verde para o botão */
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+canvas {
+    display: none;
+    max-width: 640px;
+    height: auto;
+}
+
+form {
+    display: none;
+    text-align: center;
+    margin-top: 20px;
+}
+
+#image-input {
+    display: none;
+}
+
+button[type="submit"] {
+    background-color: #00cc00; /* Cor verde para o botão de envio */
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+p {
+    text-align: center;
+    margin: 10px 0;
+    font-size: xx-large;
+    font-weight: 900;
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+}
+
+/* Botão de Voltar */
+a button[type="button"] {
+    background-color: #333;
+}
+
+a button[type="button"]:hover {
+    background-color: #555;
+}
+/* Adicione estilos adicionais conforme necessário */
+
