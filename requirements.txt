@@ -14,7 +14,7 @@ flup==1.0.3
 gunicorn==21.2.0
 iniconfig==2.0.0
 intel-openmp==2023.1.0
-lz4-c==1.9.4
+lz4-c
 m2w64-gcc-libs-core==5.3.0
 m2w64-gmp==6.1.0
 m2w64-libwinpthread-git==5.0.0.4634.697f757
