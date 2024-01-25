@@ -17,7 +17,6 @@ intel-openmp==2023.1.0
 mkl==2023.1.0
 numexpr==2.8.7
 numpy==1.26.3
-numpy-base==1.26.3
 opencv-python==4.9.0.80
 opencv-python-headless==4.9.0.80
 openjpeg==2.5.0
