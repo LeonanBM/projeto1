@@ -30,7 +30,6 @@ python-dateutil==2.8.2
 pytz==2023.3.post1
 setuptools==68.2.2
 six==1.10.0
-sqlite==3.41.2
 sqlparse==0.4.4
 tbb==2021.8.0
 tk==8.6.13
