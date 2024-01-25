@@ -14,10 +14,7 @@ flup==1.0.3
 gunicorn==21.2.0
 iniconfig==2.0.0
 intel-openmp==2023.1.0
-libjpeg-turbo==3.0.0
-libpng==1.6.39
-libtiff==4.6.0
-libuv==1.44.2
+libjpeg-turbo
 lz4-c==1.9.4
 m2w64-gcc-libs-core==5.3.0
 m2w64-gmp==6.1.0
