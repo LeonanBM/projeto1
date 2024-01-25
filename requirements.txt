@@ -27,7 +27,6 @@ psycopg2==2.9.9
 psycopg2-binary==2.9.9
 pytest==7.4.4
 python-dateutil==2.8.2
-python_abi==3.9
 pytz==2023.3.post1
 setuptools==68.2.2
 six==1.10.0
