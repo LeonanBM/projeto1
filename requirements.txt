@@ -36,7 +36,6 @@ tk
 tomli==2.0.1
 typing-extensions==4.9.0
 tzdata==2023.4
-vc==14.2
 vc14_runtime==14.38.33130
 vs2015_runtime==14.38.33130
 webob==1.8.7
