@@ -15,7 +15,6 @@ gunicorn==21.2.0
 iniconfig==2.0.0
 intel-openmp==2023.1.0
 mkl==2023.1.0
-msys2-conda-epoch==20160418
 numexpr==2.8.7
 numpy==1.26.3
 numpy-base==1.26.3
