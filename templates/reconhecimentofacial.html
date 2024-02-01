@@ -1,4 +1,4 @@
-{% load static %}
+'{% load static %}
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -22,11 +22,9 @@
         <input type="file" accept="image/*" capture="environment" name="image" id="image-input" style="display:none;">
         <button type="submit">Enviar</button>
     </form>
-    
-
 
     {% if nome_pessoa %}
-        <p>Nome da pessoa: {{ nome_pessoa }}</p>
+        <p style="white-space: pre-line;">Nome: {{ nome_pessoa.0 }} <br> {{ nome_pessoa.1 }} <br> {{ nome_pessoa.2 }}</p>
     {% endif %}
 
     {% if error %}

@@ -1,17 +1,20 @@
 # views.py
 from concurrent.futures import ThreadPoolExecutor
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.shortcuts import render, redirect
-from .models import Pessoa, CadastroEmAnalise, Verificacao
+from .models import Pessoa, CadastroEmAnalise, Verificacao, RegistroReconhecimento  # Adicione esta linha
 import face_recognition
 from django.views.generic import View
 from datetime import datetime
+from .form import ImageUploadForm
 import numpy as np
+import pandas as pd
 import io
 import logging
 import cv2
 import os
+import threading
 
 logger = logging.getLogger(__name__)
 
@@ -119,84 +122,106 @@ class CadastrarView(View):
             context = {'nome': nome, 'mensagem': mensagem}
             return render(request, self.template_name, context)
 
+class ExportarDadosView(View):
+    def get(self, request):
+        # Filtrar os registros de reconhecimento por um mês específico (por exemplo, janeiro de 2024)
+        registros = RegistroReconhecimento.objects.filter(
+            horario__month=1,  # Mês de janeiro
+            horario__year=2024  # Ano de 2024
+        )
+
+        # Criar um DataFrame do pandas com os dados
+        data = {'Pessoa': [registro.pessoa.nome for registro in registros],
+                'Horário': [registro.horario.strftime("%d/%m/%Y %H:%M:%S") for registro in registros]}
+
+        df = pd.DataFrame(data)
+
+        # Configurar a resposta HTTP para download do Excel
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename=registros_reconhecimento.xlsx'
+
+        # Salvar o DataFrame no formato Excel
+        df.to_excel(response, index=False)
+
+        return response
+
+
 class ReconhecimentoFacialView(View):
     template_name = 'reconhecimentofacial.html'
 
     @staticmethod
     def recognize_face(uploaded_image):
-        people = Pessoa.objects.all()
-        verificacao = Verificacao.objects.all()
-        # Salvar temporariamente a imagem usando OpenCV
+        people = Pessoa.objects.only('imagem', 'nome')
+
         temp_image_path = "temp_image.jpg"
         with open(temp_image_path, 'wb') as temp_image_file:
             temp_image_file.write(uploaded_image)
-        # Carregar a imagem temporária usando OpenCV
+
         imagem_enviada = cv2.imread(temp_image_path)
-        # Converta a imagem para RGB (face_recognition usa RGB)
         imagem_enviada_rgb = cv2.cvtColor(imagem_enviada, cv2.COLOR_BGR2RGB)
-        # Detectar rosto na imagem
         face_locations = face_recognition.face_locations(imagem_enviada_rgb)
-        
+
         if not face_locations:
+            os.remove(temp_image_path)
             return None
 
-        # Codificar os rostos encontrados
         imagem_enviada_encodings = face_recognition.face_encodings(imagem_enviada_rgb, face_locations)
 
-
         for person in people:
-            # Carregar encodings da pessoa do banco de dados
-            pessoa_encodings = face_recognition.face_encodings(face_recognition.load_image_file(person.imagem.path))
+            try:
+                pessoa_encodings = face_recognition.face_encodings(
+                    face_recognition.load_image_file(person.imagem.path)
+                )[0]
 
-            # Comparar os encodings
-            for i, encoding in enumerate(imagem_enviada_encodings):
-                result = face_recognition.compare_faces(pessoa_encodings, encoding)
-                
+                for encoding in imagem_enviada_encodings:
+                    result = face_recognition.compare_faces([pessoa_encodings], encoding)
 
+                    if any(result):
+                        verificacoes = Verificacao.objects.filter(pessoa=person).order_by('-horario')
 
-            for i, encoding in enumerate(imagem_enviada_encodings):
-                # Comparar o encoding do rosto encontrado com o encoding da pessoa
-                result = face_recognition.compare_faces(pessoa_encodings, encoding)
+                        if verificacoes.exists():
+                            ultima_verificacao = verificacoes.first()
+                            ultima_verificacao.horario = datetime.now()
+                            ultima_verificacao.save()
+                            
+                            # Adiciona um registro na tabela RegistroReconhecimento
+                            RegistroReconhecimento.objects.create(pessoa=person, horario=datetime.now())
 
-                if any(result):
+                        else:
+                            ultima_verificacao = Verificacao.objects.create(pessoa=person, horario=datetime.now())
 
-                    # Obter todas as verificações associadas à pessoa
-                    verificacoes = Verificacao.objects.filter(pessoa=person).order_by('-horario')
+                        os.remove(temp_image_path)
+                        # Retorna o nome da pessoa e as informações formatadas
+                        return person.nome, ultima_verificacao.horario.strftime("%H:%M:%S"), ultima_verificacao.horario.strftime("%d/%m/%Y")
 
-                    if verificacoes.exists():
-                        # Obter a última verificação
-                        ultima_verificacao = verificacoes.first()
-                        ultima_verificacao.horario = datetime.now()
-                        ultima_verificacao.save()
-                    else:
-                        # Criar uma nova verificação se não houver nenhuma
-                        ultima_verificacao = Verificacao.objects.create(pessoa=person, horario=datetime.now())
+            except FileNotFoundError:
+                continue
 
-                    return person.nome, ultima_verificacao.horario.strftime("Horario %H:%M:%S"), ultima_verificacao.horario.strftime(" Data %d-%m-%Y")
-
-
-                    
-        # Remover a imagem temporária após o uso
         os.remove(temp_image_path)
         return None
     
-
     def get(self, request):
-        return render(request, self.template_name)
+        # Implemente o comportamento desejado para o método GET, se necessário
+        return render(request, self.template_name, {'nome_pessoa': None, 'mensagem': None, 'error': None})
 
-    def post(self, request):        
+    def post(self, request):
         try:
             uploaded_image = request.FILES['image'].read()
-            
-            nome_pessoa = self.recognize_face(uploaded_image)
-            if nome_pessoa:
-                return render(request, self.template_name, {'nome_pessoa': nome_pessoa, 'error': None})
 
+            # Chama o método de reconhecimento facial
+            nome_pessoa = self.recognize_face(uploaded_image)
+
+            if nome_pessoa:
+                mensagem = f'Reconhecimento concluído: {nome_pessoa}'
             else:
-                return render(request, self.template_name, {'nao reco': nome_pessoa, 'error': 'Pessoa não reconhecida.'})
+                mensagem = 'Nenhuma correspondência encontrada.'
+
+            # Renderiza o template com o resultado
+            return render(request, self.template_name, {'nome_pessoa': nome_pessoa, 'mensagem': mensagem, 'error': None})
 
         except Exception as e:
-            return render(request, self.template_name, {'error': f"Erro no reconhecimento facial: {str(e)}", 'nome_pessoa': None})
+            # Captura e exibe qualquer exceção que ocorra durante o processamento
+            return render(request, self.template_name, {'error': f"Erro no reconhecimento facial: {str(e)}", 'nome_pessoa': None, 'mensagem': None})
 
 class Test(View):
     template_name = 'index.html'

@@ -3,7 +3,7 @@ from django.contrib import admin
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponseRedirect
 from django.urls import path
-from .models import Pessoa, CadastroEmAnalise
+from .models import Pessoa, CadastroEmAnalise, RegistroReconhecimento
 from django.utils.safestring import mark_safe
 from django.urls import reverse
 from django.utils.html import format_html
@@ -50,3 +50,8 @@ class CadastroEmAnaliseAdmin(admin.ModelAdmin):
             path('<path:cadastro_id>/move-para-pessoas/', self.admin_site.admin_view(self.move_para_pessoas), name='move-para-pessoas'),
         ]
         return custom_urls + urls
+    
+    
+@admin.register(RegistroReconhecimento)
+class RegistroReconhecimentoAdmin(admin.ModelAdmin):
+    list_display = ['pessoa', 'horario']
